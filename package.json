@@ -1,6 +1,6 @@
 {
   "name": "edge-xhttp-relay",
-  "version": "1.0.0",
+  "version": "1.2",
   "description": "Serverless XHTTP relay for Xray/V2Ray on edge runtime",
   "private": true,
   "license": "MIT"
