@@ -5,8 +5,8 @@ export const config = {
 const TARGET_BASE = (process.env.TARGET_DOMAIN || "").replace(/\/$/, "");
 const PLATFORM_HEADER_PREFIX = `x-${String.fromCharCode(118, 101, 114, 99, 101, 108)}-`;
 const RELAY_PATH = normalizeRelayPath(process.env.RELAY_PATH || "");
-const RELAY_KEY = process.env.RELAY_KEY || "";
-const UPSTREAM_TIMEOUT_MS = parsePositiveInt(process.env.UPSTREAM_TIMEOUT_MS, 20000);
+const RELAY_KEY = (process.env.RELAY_KEY || "").trim();
+const UPSTREAM_TIMEOUT_MS = parsePositiveInt(process.env.UPSTREAM_TIMEOUT_MS, 120000);
 const ALLOWED_METHODS = new Set(["GET", "HEAD", "POST"]);
 const FORWARD_HEADER_EXACT = new Set([
   "accept",
@@ -46,6 +46,18 @@ export default async function handler(req) {
   if (!TARGET_BASE) {
     return new Response("Misconfigured: TARGET_DOMAIN is not set", { status: 500 });
   }
+  if (!RELAY_PATH) {
+    return new Response("Misconfigured: RELAY_PATH is not set", { status: 500 });
+  }
+  if (RELAY_PATH === "/") {
+    return new Response("Misconfigured: RELAY_PATH cannot be '/'", { status: 500 });
+  }
+  if (!RELAY_KEY) {
+    return new Response("Misconfigured: RELAY_KEY is not set", { status: 500 });
+  }
+  if (RELAY_KEY.length < 16) {
+    return new Response("Misconfigured: RELAY_KEY is too short", { status: 500 });
+  }
 
   const url = new URL(req.url);
   if (!isAllowedRelayPath(url.pathname)) {
@@ -59,16 +71,13 @@ export default async function handler(req) {
     });
   }
 
-  if (RELAY_KEY) {
-    const token = req.headers.get("x-relay-key") || url.searchParams.get("k") || "";
-    if (token !== RELAY_KEY) {
-      return new Response("Forbidden", { status: 403 });
-    }
+  const token = req.headers.get("x-relay-key") || "";
+  if (token !== RELAY_KEY) {
+    return new Response("Forbidden", { status: 403 });
   }
 
   try {
     const upstreamQuery = new URLSearchParams(url.search);
-    if (RELAY_KEY) upstreamQuery.delete("k");
     const query = upstreamQuery.toString();
     const targetUrl = `${TARGET_BASE}${url.pathname}${query ? `?${query}` : ""}`;
 
@@ -130,16 +139,15 @@ function shouldForwardHeader(headerName) {
   return false;
 }
 
+function isAllowedRelayPath(pathname) {
+  return pathname === RELAY_PATH || pathname.startsWith(`${RELAY_PATH}/`);
+}
+
 function normalizeRelayPath(rawPath) {
   if (!rawPath) return "";
   const path = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
   if (path.length > 1 && path.endsWith("/")) return path.slice(0, -1);
   return path;
-}
-
-function isAllowedRelayPath(pathname) {
-  if (!RELAY_PATH) return true;
-  return pathname === RELAY_PATH || pathname.startsWith(`${RELAY_PATH}/`);
 }
 
 function parsePositiveInt(rawValue, fallbackValue) {
