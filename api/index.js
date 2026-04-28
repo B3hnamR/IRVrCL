@@ -52,10 +52,7 @@ export default async function handler(req) {
   if (RELAY_PATH === "/") {
     return new Response("Misconfigured: RELAY_PATH cannot be '/'", { status: 500 });
   }
-  if (!RELAY_KEY) {
-    return new Response("Misconfigured: RELAY_KEY is not set", { status: 500 });
-  }
-  if (RELAY_KEY.length < 16) {
+  if (RELAY_KEY && RELAY_KEY.length < 16) {
     return new Response("Misconfigured: RELAY_KEY is too short", { status: 500 });
   }
 
@@ -71,9 +68,11 @@ export default async function handler(req) {
     });
   }
 
-  const token = req.headers.get("x-relay-key") || "";
-  if (token !== RELAY_KEY) {
-    return new Response("Forbidden", { status: 403 });
+  if (RELAY_KEY) {
+    const token = req.headers.get("x-relay-key") || "";
+    if (token !== RELAY_KEY) {
+      return new Response("Forbidden", { status: 403 });
+    }
   }
 
   try {
