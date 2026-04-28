@@ -1,7 +1,7 @@
 {
   "name": "edge-xhttp-relay",
-  "version": "1.1.0",
-  "description": "Serverless XHTTP relay for Xray/V2Ray on an edge function runtime (Node.js, 128MB memory)",
+  "version": "1.0.0",
+  "description": "Serverless XHTTP relay for Xray/V2Ray on edge runtime",
   "private": true,
   "license": "MIT"
 }
