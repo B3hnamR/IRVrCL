@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🚀 XHTTP Relay (VrcLIraniCore)
+# 🚀 XHTTP Relay (VercelIraniCore)
 
 **A High-Performance & Lightweight XHTTP Relay on Vercel Edge Runtime**
 
